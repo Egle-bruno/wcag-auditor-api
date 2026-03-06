@@ -1,19 +1,18 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import re
 import time
 
-# 1. Inicializamos la aplicación y activamos CORS
-# CORS es necesario para que Microsoft pueda enviarnos datos sin bloqueos de seguridad
+# 1. Configuración inicial
 app = Flask(__name__)
 CORS(app)
 
-# 2. La lógica de auditoría (El "Cerebro")
+# 2. El "Cerebro" de la auditoría
 def realizar_auditoria(html_codigo):
     inicio_ia = time.time()
     errores = []
     
-    # Detección de errores (WCAG)
+    # Detección de errores WCAG (Imágenes y Lenguaje)
     if re.search(r'<img(?!.*?alt=)', html_codigo):
         errores.append({"error": "[ALTA] Falta atributo ALT en imágenes."})
     
@@ -34,21 +33,24 @@ def realizar_auditoria(html_codigo):
         "codigo_limpio": html_codigo.replace("<html>", "<html lang='es'>")
     }
 
-# 3. Creamos la "puerta" o Endpoint de la API
-# Aquí es donde Power Automate enviará el HTML sucio
+# 3. RUTA VISUAL (La cara del proyecto en la nube)
+@app.route('/')
+def home():
+    # Esta línea busca el archivo index.html dentro de la carpeta /templates
+    return render_template('index.html')
+
+# 4. RUTA TÉCNICA (La que procesa los datos)
 @app.route('/audit', methods=['POST'])
 def audit_endpoint():
-    # Recibimos el JSON que envía el bot
     data = request.get_json()
     
-    # Validamos que nos hayan enviado la variable 'html_content'
+    # Validamos que el paquete traiga la etiqueta 'html_content'
     if not data or 'html_content' not in data:
-        return jsonify({"error": "No se recibió contenido"}), 400
+        return jsonify({"error": "No se recibió contenido HTML"}), 400
     
-    # Procesamos y devolvemos la respuesta en formato JSON
     resultado = realizar_auditoria(data['html_content'])
     return jsonify(resultado)
 
-# 4. Arrancamos el servidor en tu computadora
+# 5. Encendido del servidor
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

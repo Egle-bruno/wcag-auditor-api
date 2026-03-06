@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Auditor WCAG Profesional</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f4f4f9; }
+        textarea { width: 100%; height: 200px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #ccc; padding: 10px; font-size: 14px; }
+        button { background: #007bff; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        #resultado { margin-top: 30px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: none; }
+        .error-item { margin-bottom: 10px; padding: 10px; border-left: 5px solid #dc3545; background: #fff5f5; }
+    </style>
+</head>
+<body>
+    <h1>Auditor de Accesibilidad Web</h1>
+    <p>Pega tu código HTML aquí para analizarlo:</p>
+    <textarea id="htmlInput" placeholder="Ejemplo: <html><body><img src='foto.jpg'></body></html>"></textarea>
+    <br>
+    <button onclick="auditar()">Analizar Código Ahora</button>
+
+    <div id="resultado">
+        <h3>Reporte de Auditoría:</h3>
+        <div id="resumen"></div>
+        <hr>
+        <div id="detalles"></div>
+    </div>
+
+    <script>
+        async function auditar() {
+            const html = document.getElementById('htmlInput').value;
+            if(!html) return alert("Pega algún código primero");
+
+            const res = await fetch('/audit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ html_content: html })
+            });
+            const data = await res.json();
+            
+            document.getElementById('resultado').style.display = 'block';
+            document.getElementById('resumen').innerHTML = `
+                <p><b>Estado:</b> ${data.resumen_ejecutivo.estado}</p>
+                <p><b>Total Errores:</b> ${data.resumen_ejecutivo.total_errores}</p>
+                <p><b>Tiempo IA:</b> ${data.resumen_ejecutivo.tiempo_ia}</p>
+            `;
+            
+            document.getElementById('detalles').innerHTML = data.detalles_tecnicos.length > 0 
+                ? data.detalles_tecnicos.map(e => `<div class="error-item">${e.error}</div>`).join('')
+                : "<p style='color:green'>¡No se encontraron errores básicos!</p>";
+        }
+    </script>
+</body>
+</html>
